@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = "Microsoft Corporation"
   s.source           = { :git => "https://github.com/microsoft/FluentDarkModeKit.git", :tag => s.version.to_s }
-  s.platform         = :ios, '11.0'
+  s.platform         = :ios, '9.0'
   s.requires_arc     = true
   s.frameworks       = 'UIKit', 'Foundation'
   s.swift_version    = '5.0'
