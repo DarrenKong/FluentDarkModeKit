@@ -85,8 +85,12 @@
 }
 
 - (UIImage *)imageWithHorizontallyFlippedOrientation {
-  return (UIImage *)[[DMDynamicImageProxy alloc] initWithLightImage:[self.lightImage imageWithHorizontallyFlippedOrientation]
-                                                          darkImage:[self.darkImage imageWithHorizontallyFlippedOrientation]];
+  if (@available(iOS 10.0, *)) {
+    return (UIImage *)[[DMDynamicImageProxy alloc] initWithLightImage:[self.lightImage imageWithHorizontallyFlippedOrientation]
+                                                            darkImage:[self.darkImage imageWithHorizontallyFlippedOrientation]];
+  } else {
+    return nil;
+  }
 }
 
 - (id)copy {
