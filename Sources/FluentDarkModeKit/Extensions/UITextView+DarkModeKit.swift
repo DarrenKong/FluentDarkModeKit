@@ -4,11 +4,17 @@
 //
 
 extension UITextView {
-  override func dm_updateDynamicColors() {
-    super.dm_updateDynamicColors()
+  override open func dmTraitCollectionDidChange(_ previousTraitCollection: DMTraitCollection?) {
+    super.dmTraitCollectionDidChange(previousTraitCollection)
+
+    if #available(iOS 13.0, *) {
+      return
+    }
+
+    dm_updateDynamicColors()
 
     keyboardAppearance = {
-      if DMTraitCollection.current.userInterfaceStyle == .dark {
+      if DMTraitCollection.override.userInterfaceStyle == .dark {
         return .dark
       }
       else {

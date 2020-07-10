@@ -17,39 +17,60 @@ final class DarkModeKitUITests: XCTestCase {
   }
 
   func testUIView() {
-    _test("UIView")
+    _test(UIView.self)
   }
 
   func testUIActivityIndicatorView() {
-    _test("UIActivityIndicatorView")
+    _test(UIActivityIndicatorView.self)
   }
 
   func testUIButton() {
-    _test("UIButton")
+    _test(UIButton.self)
   }
 
   func testUIPageControl() {
-    _test("UIPageControl")
+    _test(UIPageControl.self)
   }
 
-  func _test(_ className: String) {
-    let app = XCUIApplication()
-    let refreshButton = app.navigationBars["FluentDarkModeKitExample.MainView"].buttons["Refresh"]
-    refreshButton.tap()
+  func testUILabel() {
+    _test(UILabel.self)
+  }
 
-    let uiviewStaticText = app.tables.staticTexts[className]
+  func testUIImageView() {
+    _test(UIImageView.self)
+  }
+
+  func _test(_ `class`: UIView.Type) {
+    _test(by: NSStringFromClass(`class`))
+  }
+
+  func _test(by itemName: String) {
+    let app = XCUIApplication()
+    let navigationBarIdentifier = "0" // Current window index is used as navigation bar title
+    let refreshButtonIdentifier = "Refresh"
+    let compareNavigatonBarTitle = "FluentDarkModeKitExample.View"
+
+    let refreshButton = app.navigationBars[navigationBarIdentifier].buttons[refreshButtonIdentifier]
+    refreshButton.tap() // light mode
+    refreshButton.tap() // dark mode
+
+    let uiviewStaticText = app.tables.staticTexts[itemName]
     uiviewStaticText.tap()
+
+    sleep(1)
 
     let screenshot1 = app.screenshot()
 
-    app.navigationBars["FluentDarkModeKitExample.\(className)VC"].buttons["Back"].tap()
-    refreshButton.tap()
+    let backButtonTitle = navigationBarIdentifier
+    app.navigationBars[navigationBarIdentifier].buttons[backButtonTitle].tap()
+    refreshButton.tap() // unspecified
+    refreshButton.tap() // light mode
     uiviewStaticText.tap()
 
     let tabBarsQuery = app.tabBars
     tabBarsQuery.children(matching: .button).element(boundBy: 1).tap()
-    app.navigationBars["FluentDarkModeKitExample.View"].buttons["Refresh"].tap()
-    tabBarsQuery.children(matching: .button).element(boundBy: 0).tap()
+    app.navigationBars[compareNavigatonBarTitle].buttons[refreshButtonIdentifier].tap()
+    tabBarsQuery.children(matching: .button).element(boundBy: 0).tap() // dark mode
 
     let screenshot2 = app.screenshot()
 

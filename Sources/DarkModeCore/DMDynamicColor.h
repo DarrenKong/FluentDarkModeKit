@@ -3,7 +3,12 @@
 //  Licensed under the MIT License.
 //
 
-#import <UIKit/UIKit.h>
+@import UIKit;
+#ifdef SWIFT_PACKAGE
+#import "DMTraitCollection.h"
+#else
+#import <FluentDarkModeKit/DMTraitCollection.h>
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -13,7 +18,8 @@ NS_SWIFT_NAME(DynamicColor)
 @property (nonatomic, readonly) UIColor *lightColor;
 @property (nonatomic, readonly) UIColor *darkColor;
 
-- (instancetype)initWithLightColor:(UIColor *)lightColor darkColor:(UIColor *)darkColor;
++ (UIColor *)colorWithLightColor:(UIColor *)lightColor darkColor:(UIColor *)darkColor;
++ (UIColor *)colorWithDynamicProvider:(UIColor * (^)(DMTraitCollection *traitCollection))dynamicProvider;
 
 @end
 

@@ -6,16 +6,16 @@
 extension UITabBar {
   override open func dmTraitCollectionDidChange(_ previousTraitCollection: DMTraitCollection?) {
     super.dmTraitCollectionDidChange(previousTraitCollection)
-    items?.forEach { $0.dmTraitCollectionDidChange(previousTraitCollection) }
-  }
 
-  override func dm_updateDynamicImages() {
-    super.dm_updateDynamicImages()
+    if #available(iOS 13.0, *) {
+      return
+    }
+
     items?.forEach { $0._updateDynamicImages() }
   }
 }
 
-extension UITabBarItem: DMTraitEnvironment {
+extension UITabBarItem {
 
   private struct Constants {
     static var UIImageKey = "UIImageKey"
@@ -71,10 +71,6 @@ extension UITabBarItem: DMTraitEnvironment {
       oldIMP(self, selector, image)
     } as @convention(block) (UITabBarItem, UIImage?) -> Void), method_getTypeEncoding(method))
   }()
-
-  open func dmTraitCollectionDidChange(_ previousTraitCollection: DMTraitCollection?) {
-    // For subclasses to override
-  }
 
   fileprivate func _updateDynamicImages() {
     if let dynamicImage = dm_dynamicImage {

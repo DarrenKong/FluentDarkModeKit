@@ -4,12 +4,11 @@
 //
 
 #import "DMDynamicColor.h"
-#import "DMTraitCollection.h"
+#import "DMNamespace.h"
 
 @interface DMDynamicColorProxy : NSProxy <NSCopying>
 
-@property (nonatomic, strong) UIColor *lightColor;
-@property (nonatomic, strong) UIColor *darkColor;
+@property (nonatomic, strong) UIColor *(^dynamicProvider)(DMTraitCollection *);
 
 @property (nonatomic, readonly) UIColor *resolvedColor;
 
@@ -17,27 +16,43 @@
 
 @implementation DMDynamicColorProxy
 
-// TODO: We need a more generic initializer.
-- (instancetype)initWithLightColor:(UIColor *)lightColor darkColor:(UIColor *)darkColor {
-  self.lightColor = lightColor;
-  self.darkColor = darkColor;
-
+- (instancetype)initWithDynamicProvider:(UIColor * (^)(DMTraitCollection *traitCollection))dynamicProvider {
+  self.dynamicProvider = dynamicProvider;
   return self;
 }
 
 - (UIColor *)resolvedColor {
-  if (DMTraitCollection.currentTraitCollection.userInterfaceStyle == DMUserInterfaceStyleDark) {
-    return self.darkColor;
-  } else {
-    return self.lightColor;
-  }
+  return [self resolvedColorWithTraitCollection:DMTraitCollection.overrideTraitCollection];
+}
+
+- (UIColor *)resolvedColorWithTraitCollection:(DMTraitCollection *)traitCollection {
+  return self.dynamicProvider(traitCollection);
 }
 
 // MARK: UIColor
 
 - (UIColor *)colorWithAlphaComponent:(CGFloat)alpha {
-  return [[DMDynamicColor alloc] initWithLightColor:[self.lightColor colorWithAlphaComponent:alpha]
-                                          darkColor:[self.darkColor colorWithAlphaComponent:alpha]];
+  return [DMDynamicColor colorWithDynamicProvider:^UIColor *(DMTraitCollection *traitCollection) {
+    return [self.dynamicProvider(traitCollection) colorWithAlphaComponent:alpha];
+  }];
+}
+
+// MARK: Methods that do not need forwarding
+
+- (UIColor *)lightColor {
+  return [self resolvedColorWithTraitCollection:[DMTraitCollection traitCollectionWithUserInterfaceStyle:DMUserInterfaceStyleLight]];
+}
+
+- (UIColor *)darkColor {
+  return [self resolvedColorWithTraitCollection:[DMTraitCollection traitCollectionWithUserInterfaceStyle:DMUserInterfaceStyleDark]];
+}
+
+- (UIColor *)dm_resolvedColorWithTraitCollection:(DMTraitCollection *)traitCollection {
+  return [self resolvedColorWithTraitCollection:traitCollection];;
+}
+
+- (UIColor *)dm_namespace:(DMNamespace)namespace resolvedColorWithTraitCollection:(DMTraitCollection *)traitCollection {
+  return [self dm_resolvedColorWithTraitCollection:traitCollection];
 }
 
 // MARK: NSProxy
@@ -68,7 +83,7 @@
 }
 
 - (id)copyWithZone:(NSZone *)zone {
-  return [[DMDynamicColorProxy alloc] initWithLightColor:self.lightColor darkColor:self.darkColor];
+  return [[DMDynamicColorProxy alloc] initWithDynamicProvider:[self.dynamicProvider copy]];
 }
 
 @end
@@ -77,8 +92,14 @@
 
 @implementation DMDynamicColor
 
-- (UIColor *)initWithLightColor:(UIColor *)lightColor darkColor:(UIColor *)darkColor {
-  return (DMDynamicColor *)[[DMDynamicColorProxy alloc] initWithLightColor:lightColor darkColor:darkColor];
++ (UIColor *)colorWithLightColor:(UIColor *)lightColor darkColor:(UIColor *)darkColor {
+  return [self colorWithDynamicProvider:^(DMTraitCollection *traitCollection){
+    return traitCollection.userInterfaceStyle == DMUserInterfaceStyleDark ? darkColor : lightColor;
+  }];
+}
+
++ (UIColor *)colorWithDynamicProvider:(UIColor * _Nonnull (^)(DMTraitCollection * _Nonnull))dynamicProvider {
+  return (DMDynamicColor *)[[DMDynamicColorProxy alloc] initWithDynamicProvider:dynamicProvider];
 }
 
 - (UIColor *)lightColor {
