@@ -135,15 +135,28 @@ static BOOL _isObservingNewWindowAddNotification = NO;
   }];
 
   if (animated) {
-    [UIViewPropertyAnimator runningPropertyAnimatorWithDuration:0.25 delay:0 options:0 animations:^{
-      [snapshotViews enumerateObjectsUsingBlock:^(UIView * _Nonnull view, NSUInteger idx, BOOL * _Nonnull stop) {
-        view.alpha = 0;
+    if (@available(iOS 10.0, *)) {
+      // 10.0才有的新api，动画会更顺畅，但是支持效果比较低。
+      [UIViewPropertyAnimator runningPropertyAnimatorWithDuration:0.25 delay:0 options:0 animations:^{
+        [snapshotViews enumerateObjectsUsingBlock:^(UIView * _Nonnull view, NSUInteger idx, BOOL * _Nonnull stop) {
+          view.alpha = 0;
+        }];
+      } completion:^(UIViewAnimatingPosition finalPosition) {
+        [snapshotViews enumerateObjectsUsingBlock:^(UIView * _Nonnull view, NSUInteger idx, BOOL * _Nonnull stop) {
+          [view removeFromSuperview];
+        }];
       }];
-    } completion:^(UIViewAnimatingPosition finalPosition) {
-      [snapshotViews enumerateObjectsUsingBlock:^(UIView * _Nonnull view, NSUInteger idx, BOOL * _Nonnull stop) {
-        [view removeFromSuperview];
+    } else {
+      [UIView animateWithDuration:0.25 animations:^{
+        [snapshotViews enumerateObjectsUsingBlock:^(UIView * _Nonnull view, NSUInteger idx, BOOL * _Nonnull stop) {
+          view.alpha = 0;
+        }];
+      } completion:^(BOOL finished) {
+        [snapshotViews enumerateObjectsUsingBlock:^(UIView * _Nonnull view, NSUInteger idx, BOOL * _Nonnull stop) {
+          [view removeFromSuperview];
+        }];
       }];
-    }];
+    }
   }
 }
 
