@@ -3,7 +3,7 @@
 //  Licensed under the MIT License.
 //
 
-extension UIWindow {
+extension UIActivityIndicatorView {
   override open func dmTraitCollectionDidChange(_ previousTraitCollection: DMTraitCollection?) {
     super.dmTraitCollectionDidChange(previousTraitCollection)
 
@@ -11,6 +11,8 @@ extension UIWindow {
       return
     }
 
-    rootViewController?.dmTraitCollectionDidChange(previousTraitCollection)
+    // Re-set the color with the copy of original color
+    // to ensure the activity indicator image is re-generated
+    color = color.copy() as? UIColor
   }
 }

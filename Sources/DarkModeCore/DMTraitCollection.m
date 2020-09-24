@@ -3,10 +3,20 @@
 //  Licensed under the MIT License.
 //
 
+#import "DMEnvironmentConfiguration.h"
 #import "DMTraitCollection.h"
+#import "UIViewController+DarkModeKit.h"
 #import "UIView+DarkModeKit.h"
+#import "UIView+DarkModeKitSwizzling.h"
+#import "UIImage+DarkModeKitSwizzling.h"
 
 @import ObjectiveC;
+
+@interface NSObject (DMTraitEnvironment)
+
++ (void)swizzleTraitCollectionDidChangeToDMTraitCollectionDidChange API_AVAILABLE(ios(13.0));
+
+@end
 
 @implementation NSObject (DMTraitEnvironment)
 
@@ -47,6 +57,8 @@
 
 static DMTraitCollection *_overrideTraitCollection = nil; // This is set manually in setOverrideTraitCollection:animated
 static void (^_userInterfaceStyleChangeHandler)(DMTraitCollection *, BOOL) = nil;
+static void (^_themeChangeHandler)(void) = nil;
+static void (^_windowThemeChangeHandler)(UIWindow *) = nil;
 static BOOL _isObservingNewWindowAddNotification = NO;
 
 + (DMTraitCollection *)currentTraitCollection {
@@ -193,6 +205,9 @@ static BOOL _isObservingNewWindowAddNotification = NO;
       return;
 
     [weakSelf updateUIWithViews:strongApp.windows viewControllers:nil traitCollection:traitCollection animated:animated];
+
+    if (_themeChangeHandler)
+      _themeChangeHandler();
   };
 
   [self observeNewWindowNotificationIfNeeded];
@@ -210,6 +225,9 @@ static BOOL _isObservingNewWindowAddNotification = NO;
       return;
 
     [weakSelf updateUIWithViews:nil viewControllers:[NSArray arrayWithObject:strongVc] traitCollection:traitCollection animated:animated];
+
+    if (_themeChangeHandler)
+      _themeChangeHandler();
   };
 
   if (syncImmediately)
@@ -243,7 +261,7 @@ static BOOL _isObservingNewWindowAddNotification = NO;
 }
 
 // MARK: - Swizzling
-+ (void)swizzleUIScreenTraitCollectionDidChange {
++ (void)swizzleUIScreenTraitCollectionDidChange API_AVAILABLE(ios(13.0)) {
   static dispatch_once_t onceToken;
   __weak typeof(self) weakSelf = self;
   dispatch_once(&onceToken, ^{
@@ -255,6 +273,28 @@ static BOOL _isObservingNewWindowAddNotification = NO;
 
       [weakSelf syncImmediatelyAnimated:YES];
     }];
+  });
+}
+
++ (void)setupEnvironmentWithConfiguration:(DMEnvironmentConfiguration *)configuration {
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    if (@available(iOS 13.0, *)) {
+      [DMTraitCollection swizzleUIScreenTraitCollectionDidChange];
+      [UIView swizzleTraitCollectionDidChangeToDMTraitCollectionDidChange];
+      [UIViewController swizzleTraitCollectionDidChangeToDMTraitCollectionDidChange];
+      if (!configuration.useImageAsset)
+        [UIImage dm_swizzleIsEqual];
+
+      _windowThemeChangeHandler = configuration.windowThemeChangeHandler;
+    }
+    else {
+      [UIView dm_swizzleSetTintColor];
+      [UIView dm_swizzleSetBackgroundColor];
+      [UIImage dm_swizzleIsEqual];
+    }
+
+    _themeChangeHandler = configuration.themeChangeHandler;
   });
 }
 
@@ -274,5 +314,24 @@ static BOOL _isObservingNewWindowAddNotification = NO;
 }
 
 - (void)dmTraitCollectionDidChange:(DMTraitCollection *)previousTraitCollection {}
+
+@end
+
+@interface UIWindow (DMTraitEnvironment)
+
+@end
+
+@implementation UIWindow (DMTraitEnvironment)
+
+- (void)dmTraitCollectionDidChange:(DMTraitCollection *)previousTraitCollection {
+  [super dmTraitCollectionDidChange:previousTraitCollection];
+
+  if (@available(iOS 13, *)) {
+    if (previousTraitCollection.userInterfaceStyle != self.dmTraitCollection.userInterfaceStyle && _windowThemeChangeHandler)
+      _windowThemeChangeHandler(self);
+  } else {
+    [[self rootViewController] dmTraitCollectionDidChange:previousTraitCollection];
+  }
+}
 
 @end

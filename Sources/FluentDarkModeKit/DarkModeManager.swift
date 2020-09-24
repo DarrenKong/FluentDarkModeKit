@@ -11,47 +11,44 @@ import UIKit
 public final class DarkModeManager: NSObject {
   private static var swizzlingConfigured = false
 
-  public class func register(with application: UIApplication, syncImmediately: Bool = false, animated: Bool = false) {
-    commonSetup()
+  public static func setup(with configuration: DMEnvironmentConfiguration) {
+    commonSetup(with: configuration)
+  }
+
+  public static func register(with application: UIApplication, syncImmediately: Bool = false, animated: Bool = false) {
     DMTraitCollection.register(with: application, syncImmediately: syncImmediately, animated: animated)
   }
 
-  public class func register(with viewController: UIViewController, syncImmediately: Bool = false, animated: Bool = false) {
-    commonSetup()
+  @available(iOSApplicationExtension 11.0, *)
+  public static func register(with viewController: UIViewController, syncImmediately: Bool = false, animated: Bool = false) {
     DMTraitCollection.register(with: viewController, syncImmediately: syncImmediately, animated: animated)
   }
 
-  public class func unregister() {
+  public static func unregister() {
     DMTraitCollection.unregister()
   }
 
-  private class func commonSetup() {
+  private static func commonSetup(with configuration: DMEnvironmentConfiguration) {
     guard !swizzlingConfigured else {
       return
     }
 
-    if #available(iOS 13.0, *) {
-      DMTraitCollection.swizzleUIScreenTraitCollectionDidChange()
-      UIView.swizzleTraitCollectionDidChangeToDMTraitCollectionDidChange()
-      UIViewController.swizzleTraitCollectionDidChangeToDMTraitCollectionDidChange()
-    }
-    else {
+    defer { swizzlingConfigured = true }
+
+    DMTraitCollection.setupEnvironment(with: configuration)
+    guard #available(iOS 13.0, *) else {
       // Colors
       UIView.swizzleWillMoveToWindowOnce
-      UIView.dm_swizzleSetBackgroundColor()
-      UIView.dm_swizzleSetTintColor()
       UITextField.swizzleTextFieldWillMoveToWindowOnce
       UILabel.swizzleDidMoveToWindowOnce
 
       // Images
-      UIImage.dm_swizzleIsEqual()
       UIImageView.swizzleSetImageOnce
       UIImageView.swizzleInitImageOnce
       UITabBarItem.swizzleSetImageOnce
       UITabBarItem.swizzleSetSelectedImageOnce
+      return
     }
-
-    swizzlingConfigured = true
   }
 
   // MARK: - Internal

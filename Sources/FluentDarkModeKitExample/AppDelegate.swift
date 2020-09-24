@@ -15,6 +15,16 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
 
+    let configuration = DMEnvironmentConfiguration()
+    configuration.themeChangeHandler = {
+      print("theme changed")
+    }
+    if #available(iOS 13.0, *) {
+      configuration.windowThemeChangeHandler = { window in
+        print("\(window) theme changed")
+      }
+    }
+    DarkModeManager.setup(with: configuration)
     DarkModeManager.register(with: application)
 
     if #available(iOS 13.0, *) {

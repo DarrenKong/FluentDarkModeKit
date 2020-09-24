@@ -9,7 +9,8 @@ import XCTest
 final class DarkModeKitTests: XCTestCase {
   func testSetBackgroundColorSwizzling() {
     UIWindow.appearance().backgroundColor = .white
-    DarkModeManager.register(with: UIApplication.shared)
+    DarkModeManager.setup(with: DMEnvironmentConfiguration())
+    DarkModeManager.register(with: .shared)
     _ = UIWindow()
   }
 
@@ -180,7 +181,7 @@ final class DarkModeKitTests: XCTestCase {
       }
     }
     else {
-      let saved = DMTraitCollection.current
+      let saved = DMTraitCollection.override
       DMTraitCollection.setOverride(DMTraitCollection(userInterfaceStyle: userInterfaceStyle), animated: false)
       expression()
       DMTraitCollection.setOverride(saved, animated: false)
